@@ -53,6 +53,7 @@ def createAgent(test=False):
 
     elif alg in['bc_equ']:
         obs_dim = (obs_channel, crop_size, crop_size)  # Replace with actual dimensions
+        output_dim = 4
         action_dim = output_dim  # Replace with actual dimension
 
         agent = BehaviorCloningAgent(input_dim=np.prod(obs_dim), output_dim=action_dim, lr=lr, gamma=gamma, device=device)
