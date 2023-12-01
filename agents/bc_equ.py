@@ -16,13 +16,14 @@ class BehaviorCloningNetwork(nn.Module):
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
-
 class BehaviorCloningAgent(BaseAgent):
-    def __init__(self, input_dim, output_dim, lr=1e-4, gamma=0.95, device='cuda', *args, **kwargs):
+    def __init__(self, input_dim, output_dim, lr=1e-4, gamma=0.95, device='cuda', action_ranges=None, n_a=4, *args, **kwargs):
         super(BehaviorCloningAgent, self).__init__(lr, gamma, device, *args, **kwargs)
         self.input_dim = input_dim
         self.output_dim = output_dim
-        self.network = None  # Placeholder for the network
+        self.action_ranges = action_ranges  # Dictionary of action ranges, e.g., {'dx': (-1, 1), 'dy': (-1, 1)}
+        self.n_a = n_a  # Number of action dimensions
+        self.network = None
 
     def initNetwork(self, network, initialize_target=False):
         self.network = network.to(self.device)
@@ -34,18 +35,11 @@ class BehaviorCloningAgent(BaseAgent):
 
     def update(self, batch):
         states, obs, actions, _, _, _, _, _, _ = self._loadBatchToDevice(batch)
-
-        # Forward pass through the network
         predicted_actions = self.network(obs)
-
-        # Calculate loss (e.g., MSE for continuous actions)
         loss = F.mse_loss(predicted_actions, actions)
-
-        # Backpropagation
         self.bc_optimizer.zero_grad()
         loss.backward()
         self.bc_optimizer.step()
-
         return loss.item()
 
     def getEGreedyActions(self, state, obs, eps):
@@ -54,4 +48,20 @@ class BehaviorCloningAgent(BaseAgent):
             predicted_action = self.network(obs_tensor)
             return predicted_action.squeeze(0).cpu().numpy()
 
-    # You might need to implement other methods as per your BaseAgent class
+    def getActionFromPlan(self, plan):
+        def getUnscaledAction(action, action_range):
+            unscaled_action = 2 * (action - action_range[0]) / (action_range[1] - action_range[0]) - 1
+            return unscaled_action
+
+        actions = {key: plan[:, idx].clamp(*self.action_ranges[key]) for idx, key in enumerate(self.action_ranges)}
+        unscaled_actions = {key: getUnscaledAction(action, self.action_ranges[key]) for key, action in actions.items()}
+
+        if self.n_a == 5:
+            return self.decodeActions(*[unscaled_actions[key] for key in sorted(unscaled_actions.keys())])
+        else:
+            return self.decodeActions(*[unscaled_actions[key] for key in sorted(unscaled_actions.keys())][:-1])
+
+    def decodeActions(self, *unscaled_actions):
+        # Implement this method based on how you want to decode your actions
+        # Example: return np.array(unscaled_actions)
+        pass
