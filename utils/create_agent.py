@@ -1,3 +1,4 @@
+from agents.bc_equ import BehaviorCloningAgent
 from utils.parameters import *
 from agents.dqn_agent_com import DQNAgentCom
 from agents.dqn_agent_com_drq import DQNAgentComDrQ
@@ -49,6 +50,10 @@ def createAgent(test=False):
         else:
             raise NotImplementedError
         agent.initNetwork(net, initialize_target=not test)
+
+    elif alg in['bc_equ']:
+        agent = BehaviorCloningAgent(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p,
+                               n_theta=n_theta)
 
     elif alg in ['curl_dqn_com']:
         if alg == 'curl_dqn_com':
