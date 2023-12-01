@@ -1,4 +1,4 @@
-from agents.bc_equ import BehaviorCloningAgent
+from agents.bc_equ import BehaviorCloningAgent, BehaviorCloningNetwork
 from utils.parameters import *
 from agents.dqn_agent_com import DQNAgentCom
 from agents.dqn_agent_com_drq import DQNAgentComDrQ
@@ -52,9 +52,13 @@ def createAgent(test=False):
         agent.initNetwork(net, initialize_target=not test)
 
     elif alg in['bc_equ']:
-        agent = BehaviorCloningAgent(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p,
-                               n_theta=n_theta)
+        obs_dim = (obs_channel, crop_size, crop_size)  # Replace with actual dimensions
+        action_dim = output_dim  # Replace with actual dimension
 
+        agent = BehaviorCloningAgent(input_dim=np.prod(obs_dim), output_dim=action_dim, lr=lr, gamma=gamma, device=device)
+        if model== 'cnn':
+          net = BehaviorCloningNetwork(obs_dim, action_dim, hidden_dims=(128, 256))  # You can adjust hidden_dims
+        
     elif alg in ['curl_dqn_com']:
         if alg == 'curl_dqn_com':
             agent = CURLDQNCom(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p,
